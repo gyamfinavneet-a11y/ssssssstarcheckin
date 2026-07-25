@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>星星签到大屏</title>
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script src="./qrcode.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:linear-gradient(135deg,#0a0a1a 0%,#1a0a2e 50%,#0a0a1a 100%);min-height:100vh;font-family:"PingFang SC","Microsoft YaHei",sans-serif;color:#fff;overflow-x:hidden}
@@ -43,7 +43,7 @@ body{background:linear-gradient(135deg,#0a0a1a 0%,#1a0a2e 50%,#0a0a1a 100%);min-
 <div class="grid" id="grid"></div>
 <div class="checkin-toast" id="toast"></div>
 <div class="qr-panel" id="qr-panel">
-<canvas id="qr-canvas"></canvas>
+<div id="qr-canvas"></div>
 <div class="qr-label">扫码签到</div>
 <div class="qr-url" id="qr-url"></div>
 </div>
@@ -59,7 +59,7 @@ setInterval(fetchMembers,2000);
 function generateQRCode(){
 var checkinUrl=window.location.origin+"/checkin.html";
 document.getElementById("qr-url").textContent=checkinUrl;
-QRCode.toCanvas(document.getElementById("qr-canvas"),checkinUrl,{width:140,margin:1,color:{dark:"#FFD700",light:"#1a0a2e"}},function(err){if(err)console.error(err)});
+new QRCode(document.getElementById("qr-canvas"),{text:checkinUrl,width:140,height:140,colorDark:"#FFD700",colorLight:"#1a0a2e",correctLevel:QRCode.CorrectLevel.H});
 }
 async function fetchMembers(){
 try{
