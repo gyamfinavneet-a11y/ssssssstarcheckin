@@ -11,14 +11,19 @@ module.exports = async (req, res) => {
   try {
     const { url, token } = getRedisConfig();
     if (!url || !token) {
-      return res.status(200).json({ success: true, members: INITIAL_MEMBERS });
+      return res.status(200).json({ success: true, members: INITIAL_MEMBERS, batchId: "1" });
     }
     let raw = await redisGet("members");
     if (!raw) {
       raw = JSON.stringify(INITIAL_MEMBERS);
       await redisSet("members", raw);
     }
-    return res.status(200).json({ success: true, members: JSON.parse(raw) });
+    let batchId = await redisGet("batchId");
+    if (!batchId) {
+      batchId = "1";
+      await redisSet("batchId", batchId);
+    }
+    return res.status(200).json({ success: true, members: JSON.parse(raw), batchId: batchId });
   } catch (err) {
     return res.status(500).json({ success: false, message: err.message });
   }

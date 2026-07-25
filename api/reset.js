@@ -13,7 +13,9 @@ module.exports = async (req, res) => {
     if (!url || !token) return res.status(200).json({ success: true });
     const reset = INITIAL_MEMBERS.map(m => ({ ...m, checked: false }));
     await redisSet("members", JSON.stringify(reset));
-    return res.status(200).json({ success: true });
+    const newBatchId = String(Date.now());
+    await redisSet("batchId", newBatchId);
+    return res.status(200).json({ success: true, batchId: newBatchId });
   } catch (err) {
     return res.status(500).json({ success: false });
   }

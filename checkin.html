@@ -53,6 +53,12 @@ body{background:var(--bg-dark);background-image:radial-gradient(ellipse at top,r
 .confirm-btn:active{transform:scale(0.95)}
 .btn-cancel{background:rgba(255,255,255,0.08);color:var(--text-dim);border:1px solid var(--border)}
 .btn-ok{background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:#1a0a2e}
+.signed-overlay{position:fixed;inset:0;background:var(--bg-dark);background-image:radial-gradient(ellipse at top,rgba(255,215,0,0.08) 0%,transparent 50%),radial-gradient(ellipse at bottom,rgba(255,165,0,0.05) 0%,transparent 50%);display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;z-index:150;text-align:center;padding:0 30px}
+.signed-overlay.show{display:flex;animation:fadeIn 0.3s ease}
+.signed-star{width:90px;height:90px;background:linear-gradient(135deg,var(--gold),var(--gold-dark));clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);box-shadow:0 0 50px rgba(255,215,0,0.5);animation:float 3s ease-in-out infinite}
+.signed-title{font-size:24px;font-weight:700;color:var(--gold);margin-top:8px}
+.signed-name{font-size:18px;color:var(--text);font-weight:600}
+.signed-sub{font-size:13px;color:var(--text-dim);line-height:1.7;margin-top:4px}
 </style>
 </head>
 <body>
@@ -70,6 +76,12 @@ body{background:var(--bg-dark);background-image:radial-gradient(ellipse at top,r
 <span>已签到 <span class="count" id="checked">0</span> 人</span>
 </div>
 <div class="member-list" id="list"></div>
+<div class="signed-overlay" id="signedOverlay">
+<div class="signed-star"></div>
+<div class="signed-title">你已完成签到</div>
+<div class="signed-name" id="signedName"></div>
+<div class="signed-sub">本轮每人仅可签到一次<br>如需重新签到，请联系现场管理员在大屏端重置</div>
+</div>
 <div class="confirm-overlay" id="confirmOverlay">
 <div class="confirm-box">
 <div class="confirm-avatar" id="confirmAvatar"></div>
@@ -88,6 +100,20 @@ body{background:var(--bg-dark);background-image:radial-gradient(ellipse at top,r
 </div>
 <script>
 var members=[];
+var currentBatchId=null;
+function getLocal(){try{return JSON.parse(localStorage.getItem("starCheckin")||"{}")}catch(e){return{}}}
+function setLocal(o){try{localStorage.setItem("starCheckin",JSON.stringify(o))}catch(e){}}
+function isLocked(){var l=getLocal();return !!(l.batchId&&currentBatchId&&l.batchId===currentBatchId&&l.signedName)}
+function applyLock(){
+if(isLocked()){
+document.getElementById("signedName").textContent=getLocal().signedName;
+document.getElementById("signedOverlay").classList.add("show");
+}else{
+document.getElementById("signedOverlay").classList.remove("show");
+var l=getLocal();
+if(l.batchId&&currentBatchId&&l.batchId!==currentBatchId){setLocal({})}
+}
+}
 function init(){
 fetchMembers();
 setInterval(fetchMembers,3000);
@@ -97,7 +123,12 @@ async function fetchMembers(){
 try{
 var res=await fetch("/api/members");
 var data=await res.json();
-if(data.success){members=data.members;renderList()}
+if(data.success){
+members=data.members;
+currentBatchId=data.batchId||"1";
+applyLock();
+if(!isLocked())renderList();
+}
 }catch(err){console.error(err)}
 }
 function renderList(){
@@ -140,10 +171,11 @@ try{
 var res=await fetch("/api/checkin",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:id})});
 var data=await res.json();
 if(data.success){
+setLocal({batchId:data.batchId||currentBatchId,signedName:member.name});
 var overlay=document.getElementById("overlay");
 document.getElementById("success-name").textContent=member.name+" 签到成功!";
 overlay.classList.add("show");
-setTimeout(function(){overlay.classList.remove("show")},2500);
+setTimeout(function(){overlay.classList.remove("show");applyLock()},2500);
 fetchMembers();
 }else{alert(data.message||"签到失败")}
 }catch(err){alert("网络错误，请重试")}

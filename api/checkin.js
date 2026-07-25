@@ -13,7 +13,7 @@ module.exports = async (req, res) => {
     const { url, token } = getRedisConfig();
     if (!url || !token) {
       const m = INITIAL_MEMBERS.find(x => x.id === id);
-      return m ? res.status(200).json({ success: true, member: { ...m, checked: true } }) : res.status(404).json({ success: false });
+      return m ? res.status(200).json({ success: true, member: { ...m, checked: true }, batchId: "1" }) : res.status(404).json({ success: false });
     }
     let raw = await redisGet("members");
     let members = raw ? JSON.parse(raw) : [...INITIAL_MEMBERS];
@@ -22,7 +22,9 @@ module.exports = async (req, res) => {
     if (member.checked) return res.status(200).json({ success: false, message: "该成员已签到" });
     member.checked = true;
     await redisSet("members", JSON.stringify(members));
-    return res.status(200).json({ success: true, member });
+    let batchId = await redisGet("batchId");
+    if (!batchId) { batchId = "1"; await redisSet("batchId", batchId); }
+    return res.status(200).json({ success: true, member, batchId: batchId });
   } catch (err) {
     return res.status(500).json({ success: false, message: err.message });
   }
