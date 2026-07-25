@@ -32,9 +32,24 @@ body{background:linear-gradient(135deg,#0a0a1a 0%,#1a0a2e 50%,#0a0a1a 100%);min-
 .footer{text-align:center;padding:20px;color:#555;font-size:14px}
 .checkin-toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);background:rgba(255,215,0,0.15);border:2px solid #FFD700;border-radius:16px;padding:20px 40px;font-size:28px;color:#FFD700;font-weight:700;pointer-events:none;z-index:100;transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1),opacity 0.4s;opacity:0}
 .checkin-toast.show{transform:translate(-50%,-50%) scale(1);opacity:1}
+.brand-bar{position:fixed;top:20px;left:20px;display:flex;align-items:center;gap:10px;z-index:60}
+.xbot-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.xbot-x{width:38px;height:38px;border-radius:8px;background:linear-gradient(135deg,#FFD700,#FFA500);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#1a0a2e;box-shadow:0 0 18px rgba(255,215,0,0.4)}
+.xbot-text{display:flex;flex-direction:column;align-items:flex-start;line-height:1.1}
+.xbot-en{font-size:19px;font-weight:800;letter-spacing:1px;background:linear-gradient(90deg,#FFD700,#FFA500);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.xbot-cn{font-size:12px;color:#aaa;letter-spacing:1px;margin-top:2px}
 </style>
 </head>
 <body>
+<div class="brand-bar">
+<div class="xbot-logo">
+<div class="xbot-x">X</div>
+<div class="xbot-text">
+<div class="xbot-en">XBOTPARK</div>
+<div class="xbot-cn">北京基地</div>
+</div>
+</div>
+</div>
 <div class="header">
 <h1>STAR CHECK-IN</h1>
 <div class="stats">已签到 <span id="checked-count">0</span> / <span id="total-count">0</span> 人</div>
