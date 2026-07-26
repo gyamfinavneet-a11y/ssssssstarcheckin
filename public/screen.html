@@ -52,9 +52,9 @@ body{background:linear-gradient(135deg,#0a0a1a 0%,#1a0a2e 50%,#0a0a1a 100%);min-
 var members=[];
 var prevCheckedIds=new Set();
 function init(){
-generateQRCode();
 fetchMembers();
 setInterval(fetchMembers,2000);
+try{generateQRCode()}catch(e){console.error("QR生成失败",e)}
 }
 function generateQRCode(){
 var checkinUrl=window.location.origin+"/checkin.html";
