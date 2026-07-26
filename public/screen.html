@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>星星签到大屏</title>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 50%, #0a0a1a 100%);
+    min-height: 100vh;
+    font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+    color: #fff;
+    overflow-x: hidden;
+  }
+
+  .header { text-align: center; padding: 30px 20px 10px; }
+  .header h1 {
+    font-size: 42px; font-weight: 700;
+    background: linear-gradient(90deg, #FFD700, #FFA500, #FFD700);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+  }
+  .header .stats { margin-top: 10px; font-size: 18px; color: #aaa; }
+  .header .stats span { color: #FFD700; font-weight: 700; font-size: 24px; }
+
+  .qr-panel {
+    position: fixed; bottom: 30px; right: 30px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 215, 0, 0.2);
+    border-radius: 16px; padding: 16px;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    backdrop-filter: blur(10px); z-index: 50;
+  }
+  .qr-panel canvas { border-radius: 8px; }
+  .qr-label { font-size: 12px; color: #FFD700; font-weight: 600; text-align: center; }
+  .qr-url { font-size: 10px; color: #666; word-break: break-all; text-align: center; max-width: 140px; }
+  .qr-status { font-size: 11px; padding: 3px 10px; border-radius: 10px; font-weight: 600; }
+  .qr-status.online { background: rgba(76, 175, 80, 0.15); color: #4CAF50; border: 1px solid rgba(76, 175, 80, 0.3); }
+
+  .reset-btn {
+    position: fixed; top: 20px; right: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #aaa; padding: 8px 16px; border-radius: 8px;
+    cursor: pointer; font-size: 13px; transition: all 0.3s; z-index: 50;
+  }
+  .reset-btn:hover { background: rgba(255, 255, 255, 0.2); color: #fff; }
+
+  .grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 30px; padding: 30px 50px; max-width: 1400px; margin: 0 auto;
+  }
+  .member { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .star-wrapper {
+    width: 110px; height: 110px; position: relative;
+    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .star-wrapper::before {
+    content: ''; position: absolute; inset: 0; background: #333;
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+    transition: background 0.6s ease, box-shadow 0.6s ease;
+  }
+  .star-avatar {
+    position: absolute; inset: 5px;
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px; font-weight: 700; color: #fff;
+    opacity: 0.3; transition: opacity 0.6s ease;
+  }
+  .member.checked .star-wrapper::before {
+    background: #FFD700; box-shadow: 0 0 25px rgba(255, 215, 0, 0.5);
+  }
+  .member.checked .star-avatar { opacity: 1; }
+  .member.checked .star-wrapper { animation: pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.25); } 100% { transform: scale(1); } }
+
+  .member-name { font-size: 16px; color: #666; font-weight: 500; transition: color 0.6s ease; }
+  .member.checked .member-name { color: #FFD700; font-weight: 700; }
+
+  .footer { text-align: center; padding: 20px; color: #555; font-size: 14px; }
+
+  .checkin-toast {
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    background: rgba(255, 215, 0, 0.15); border: 2px solid #FFD700;
+    border-radius: 16px; padding: 20px 40px; font-size: 28px;
+    color: #FFD700; font-weight: 700; pointer-events: none; z-index: 100;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s; opacity: 0;
+  }
+  .checkin-toast.show { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>STAR CHECK-IN</h1>
+  <div class="stats">已签到 <span id="checked-count">0</span> / <span id="total-count">0</span> 人</div>
+</div>
+
+<button class="reset-btn" onclick="resetAll()">重置签到</button>
+<div class="grid" id="grid"></div>
+<div class="checkin-toast" id="toast"></div>
+
+<div class="qr-panel" id="qr-panel">
+  <div id="qr-canvas"></div>
+  <div class="qr-label">扫码签到</div>
+  <div class="qr-status online">公网可访问</div>
+  <div class="qr-url" id="qr-url"></div>
+</div>
+
+<div class="footer">灰色星星 = 未签到 / 黄色星星 = 已签到 / 扫右下角二维码签到</div>
+
+<script>
+let members = [];
+let prevCheckedIds = new Set();
+
+function init() {
+  generateQRCode();
+  fetchMembers();
+  setInterval(fetchMembers, 2000);
+}
+
+function generateQRCode() {
+  const checkinUrl = window.location.origin + "/checkin.html";
+  document.getElementById("qr-url").textContent = checkinUrl;
+  QRCode.toCanvas(document.getElementById("qr-canvas"), checkinUrl, {
+    width: 140, margin: 1, color: { dark: "#1a0a2e", light: "#ffffff" }
+  }, function(err) { if (err) console.error(err); });
+}
+
+async function fetchMembers() {
+  try {
+    const res = await fetch("/api/members");
+    const data = await res.json();
+    if (data.success) {
+      const newChecked = new Set(data.members.filter(m => m.checked).map(m => m.id));
+
+      // 检测新签到的成员
+      data.members.forEach(m => {
+        if (m.checked && !prevCheckedIds.has(m.id)) {
+          showToast(m.name + " 已签到!");
+        }
+      });
+
+      members = data.members;
+      prevCheckedIds = newChecked;
+      renderGrid();
+      updateStats();
+    }
+  } catch (err) {
+    console.error("获取数据失败", err);
+  }
+}
+
+function renderGrid() {
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "";
+  members.forEach(m => {
+    const div = document.createElement("div");
+    div.className = "member" + (m.checked ? " checked" : "");
+    div.id = "member-" + m.id;
+    div.innerHTML =
+      '<div class="star-wrapper"><div class="star-avatar" style="background-color:' + m.color + '">' + m.name.charAt(0) + '</div></div>' +
+      '<div class="member-name">' + m.name + "</div>";
+    grid.appendChild(div);
+  });
+  document.getElementById("total-count").textContent = members.length;
+}
+
+function updateStats() {
+  document.getElementById("checked-count").textContent = members.filter(m => m.checked).length;
+}
+
+function showToast(text) {
+  const toast = document.getElementById("toast");
+  toast.textContent = text;
+  toast.classList.add("show");
+  setTimeout(() => toast.classList.remove("show"), 1500);
+}
+
+async function resetAll() {
+  if (!confirm("确定要重置所有签到状态吗?")) return;
+  await fetch("/api/reset", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+  prevCheckedIds = new Set();
+  fetchMembers();
+}
+
+init();
+</script>
+</body>
+</html>
