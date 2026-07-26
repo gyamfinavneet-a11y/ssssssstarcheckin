@@ -10,7 +10,8 @@
 body{background:linear-gradient(135deg,#0a0a1a 0%,#1a0a2e 50%,#0a0a1a 100%);min-height:100vh;font-family:"PingFang SC","Microsoft YaHei",sans-serif;color:#fff;overflow-x:hidden}
 .header{text-align:center;padding:30px 20px 10px}
 .header h1{font-size:42px;font-weight:700;background:linear-gradient(90deg,#FFD700,#FFA500,#FFD700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-shadow:0 0 30px rgba(255,215,0,0.3)}
-.header .stats{margin-top:10px;font-size:18px;color:#aaa}
+.header .subtitle{margin-top:6px;font-size:16px;color:rgba(255,215,0,0.5);font-style:italic;letter-spacing:2px}
+.header .stats{margin-top:8px;font-size:18px;color:#aaa}
 .header .stats span{color:#FFD700;font-weight:700;font-size:24px}
 .qr-panel{position:fixed;bottom:30px;right:30px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,215,0,0.2);border-radius:16px;padding:16px;display:flex;flex-direction:column;align-items:center;gap:8px;backdrop-filter:blur(10px);z-index:50}
 .qr-panel canvas{border-radius:8px}
@@ -37,6 +38,7 @@ body{background:linear-gradient(135deg,#0a0a1a 0%,#1a0a2e 50%,#0a0a1a 100%);min-
 <body>
 <div class="header">
 <h1>STAR CHECK-IN</h1>
+<div class="subtitle">Light up your star, awake your spark, fan your spark</div>
 <div class="stats">已签到 <span id="checked-count">0</span> / <span id="total-count">0</span> 人</div>
 </div>
 <button class="reset-btn" onclick="resetAll()">重置签到</button>
